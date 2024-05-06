@@ -204,6 +204,23 @@ spec:
         workspace: workspace
       - name: git-basic-auth
         workspace: git-auth
+    - name: build-binary
+      runAfter:
+        - prefetch-dependencies
+      taskSpec:
+        steps:
+          - image: registry.ci.openshift.org/openshift/release:golang-1.21
+            script: cd $(workspaces.workspace.path)/source; pwd; ls; TAG=v1.11.2 make build || true
+      when:
+        - input: $(tasks.init.results.build)
+          operator: in
+          values:
+            - "true"
+      workspaces:
+        - name: source
+          workspace: workspace
+        - name: git-basic-auth
+          workspace: git-auth
     - name: build-container
       params:
       - name: IMAGE
@@ -223,7 +240,7 @@ spec:
       - name: BUILD_ARGS_FILE
         value: $(params.build-args-file)
       runAfter:
-      - prefetch-dependencies
+      - build-binary
       taskRef:
         params:
         - name: name
